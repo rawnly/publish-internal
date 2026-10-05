@@ -1,0 +1,13 @@
+[tools]
+bun = "1.4"
+
+[tasks."vendor"]
+description = "Clone vendors listed in .vendors.lock"
+file = "scripts/vendor.sh"
+
+[deps.bun]
+auto = true
+
+[deps.vendor]
+outputs = ["vendor/*"]
+run = "mise run vendor"

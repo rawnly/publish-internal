@@ -1,0 +1,52 @@
+name: publish-internal
+description: Publish internal/prerelease builds of a package or monorepo to npm, GitHub Packages or any npm-compatible registry under a dist-tag.
+branding: { icon: package, color: blue }
+
+inputs:
+  packages:     { description: "Space-separated package names/dirs (monorepo)", default: "" }
+  all:          { description: "Publish every non-private workspace package", default: "false" }
+  filter:       { description: "Space-separated name globs, e.g. '@acme/*'", default: "" }
+  since:        { description: "Only packages changed since this git ref (needs fetch-depth: 0)", default: "" }
+  tag:          { description: "Dist-tag", default: "internal" }
+  version-template: { description: "Version template", default: "{version}-{tag}.{sha}.{n}" }
+  registry:     { description: "Registry URL, e.g. https://npm.pkg.github.com (default: npmjs)", default: "" }
+  token:        { description: "Registry auth token", default: "" }
+  client:       { description: "npm | pnpm | bun", default: "npm" }
+  access:       { description: "public | restricted", default: "" }
+  provenance:   { description: "Attach provenance (needs id-token: write)", default: "false" }
+  build:        { description: "Run each package's build script first", default: "false" }
+  dry-run:      { description: "Simulate the publish", default: "false" }
+  working-directory: { description: "Directory to run in", default: "." }
+
+outputs:
+  published:
+    description: "JSON array of {name, version, tag, dir, registry, published}"
+    value: ${{ steps.run.outputs.published }}
+
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+    - name: Install publish-internal
+      shell: bash
+      run: bun install --production --frozen-lockfile
+      working-directory: ${{ github.action_path }}
+    - name: Publish
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+        PI_PACKAGES: ${{ inputs.packages }}
+        PI_FILTER: ${{ inputs.filter }}
+      run: |
+        args=(--allow-dirty --tag "${{ inputs.tag }}" --version-template "${{ inputs.version-template }}" --client "${{ inputs.client }}")
+        [ "${{ inputs.all }}" = "true" ] && args+=(--all)
+        [ "${{ inputs.provenance }}" = "true" ] && args+=(--provenance)
+        [ "${{ inputs.build }}" = "true" ] && args+=(--build)
+        [ "${{ inputs.dry-run }}" = "true" ] && args+=(--dry-run)
+        [ -n "${{ inputs.since }}" ] && args+=(--since "${{ inputs.since }}")
+        [ -n "${{ inputs.registry }}" ] && args+=(--registry "${{ inputs.registry }}")
+        [ -n "${{ inputs.access }}" ] && args+=(--access "${{ inputs.access }}")
+        for f in $PI_FILTER; do args+=(--filter "$f"); done
+        bun "${{ github.action_path }}/src/cli.ts" "${args[@]}" $PI_PACKAGES

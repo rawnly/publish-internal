@@ -1,0 +1,35 @@
+{
+  "name": "publish-internal",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": false,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.0.1",
+    "effect": "^4.0.1"
+  },
+  "version": "0.1.0",
+  "description": "Publish prerelease/internal builds of packages and monorepos under a dist-tag",
+  "bin": {
+    "publish-internal": "src/cli.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./bun": "./src/bun.ts"
+  },
+  "files": [
+    "src",
+    "action.yml"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test ./test",
+    "cli": "bun src/cli.ts"
+  },
+  "license": "MIT"
+}

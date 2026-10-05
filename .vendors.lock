@@ -1,0 +1,3 @@
+{
+    "vendors": ["git@github.com:effect-ts/effect#effect@4.0.1"]
+  }
